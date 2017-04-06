@@ -2,8 +2,8 @@ import socket
 import time
 import sys
 import json
+import types
 from MessageReceiver import MessageReceiver
-#from WebServer import WebServer
 from ClientState import ClientState
 
 def encode_doLogin(username):
@@ -44,21 +44,21 @@ def parse_info(payload):
 
 def parse_message(payload):
 	return {"timestamp": payload["timestamp"],
-	        "message": payload["content"],
-			"sender": payload["sender"]}
+			"sender": payload["sender"],
+	        "message": payload["content"]}
 
-def parse_history(payload):
-	history = []
-	for json_message in payload["content"]:
-		history.append(parse(json_message))
+def parse_messageLog(payload):
+	messageLog = []
+	for jsonMessage in payload["content"]:
+		messageLog.append(parse(jsonMessage))
 	return {"timestamp": payload["timestamp"],
-	        "history": history}
+	        "history": messageLog}
 	
 validResponses = {
 	"error": parse_error,
 	"info": parse_info,
 	"message": parse_message,
-	"history": parse_history,
+	"history": parse_messageLog,
 }
 
 class Client:
@@ -66,7 +66,7 @@ class Client:
 		self.clientState = ClientState()
 		self.host = "localhost"
 		self.server_port = 9998
-		self.clientState.state = "disconnected";
+		self.clientState.state = "disconnected"
 
 		self.run()
 		
@@ -143,15 +143,15 @@ class Client:
 		elif "message" in message.keys():
 			if self.clientState.state == "chat":
 				if message["sender"] != self.clientState.userName:
-					print("\r" + message["sender"] + ": " + str(message["message"]) +  "\nYou: ", end ="")
+					print("\r" + str(message["sender"]) + ": " + str(message["message"]) +  "\nYou: ", end ="")
 		elif "history" in message.keys():
-			print("Chat history:")
+			print("Chat log:")
 			for msg in message["history"]:
 				if msg != "":
 					if msg["sender"] == self.clientState.userName:
 						print("\rYou: " + str(msg["message"]))
 					else:
-						print("\r" + msg["sender"] + ": " + str(msg["message"]))
+						print("\r" + str(msg["sender"]) + ": " + str(msg["message"]))
 			print("\rYou: ", end="")
 			self.clientState.state = "chat"
 
