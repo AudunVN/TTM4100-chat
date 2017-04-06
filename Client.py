@@ -62,15 +62,16 @@ validResponses = {
 }
 
 class Client:
-	def __init__(self, host, server_port):
+	def __init__(self):
 		self.clientState = ClientState()
-		self.host = host
-		self.server_port = server_port
-		self.clientState.state = "loggedOut";
+		self.host = "localhost"
+		self.server_port = 9998
+		self.clientState.state = "disconnected";
 
 		self.run()
 		
-	def connectToServer(self):
+	def connectToServer(self, ip):
+		self.host = ip
 		try:
 			self.connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 			self.connection.connect((self.host, self.server_port))
@@ -79,14 +80,13 @@ class Client:
 			self.clientState.state = "loggedOut"
 			print("Connection successful.")
 		except socket.error as e:
-			sys.exit("Unable to connect to server.")
+			print("Unable to connect to server.")
 			self.clientState.state = "disconnected"
 
 	def run(self):
-		print("Client started. Attempting to connect to server.")
-		self.connectToServer()
+		print("Client started.")
 		while True:
-			while not self.connection._closed:
+			while self.clientState.state != "disconnected":
 				if self.clientState.state == "disconnected":
 					break
 				else:
@@ -121,36 +121,37 @@ class Client:
 
 			self.clientState.state = "disconnected"
 			print("\rDisconnected from server.")
-			if input("\rInput: ") == "connect":
-				self.connectToServer()
+			cmd = input("\rInput: ")
+			cmdArgs = cmd.split(" ")
+			if cmdArgs[0] == "connect" and len(cmdArgs) == 2:
+				self.connectToServer(cmdArgs[1])
 			else:
-				print("\rInvalid input. Valid commands: connect")
+				print("\rInvalid input. Valid commands: connect <ip>")
 	def disconnect(self):
 		self.connection.close()
 
 	def receiveMessage(self, msg):
 		message = parse(msg)
 		if "error" in message.keys():
-			print("\rError: " + message["error"]+"\nInput: ", end ="")
+			print("\rError: " + str(message["error"]) + "\nInput: ", end ="")
 			self.clientState.state = "loggedOut"
 		elif "info" in message.keys():
 			if self.clientState.state == "chat":
-				print("\rInfo: "+message["info"]+"\nYou: ", end ="")
+				print("\rInfo: " + str(message["info"]) + "\nYou: ", end ="")
 			else: 
-				print("\rInfo: "+message["info"]+"\nInput: ", end ="")
+				print("\rInfo: " + str(message["info"]) + "\nInput: ", end ="")
 		elif "message" in message.keys():
 			if self.clientState.state == "chat":
 				if message["sender"] != self.clientState.userName:
-					print("\r"+message["sender"] + ": " + message["message"]+"\nYou: ", end ="")
-					#print(message["sender"] + ": " + message["message"])
+					print("\r" + message["sender"] + ": " + str(message["message"]) +  "\nYou: ", end ="")
 		elif "history" in message.keys():
 			print("Chat history:")
 			for msg in message["history"]:
 				if msg != "":
 					if msg["sender"] == self.clientState.userName:
-						print("\rYou: " + msg["message"])
+						print("\rYou: " + str(msg["message"]))
 					else:
-						print("\r" + msg["sender"] + ": " + msg["message"])
+						print("\r" + msg["sender"] + ": " + str(msg["message"]))
 			print("\rYou: ", end="")
 			self.clientState.state = "chat"
 
@@ -161,4 +162,4 @@ class Client:
 			print("\rError: Sending failed, no connection to server.")
 
 if __name__ == "__main__":
-	client = Client("localhost", 9998)
+	client = Client()
