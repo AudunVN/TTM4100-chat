@@ -65,7 +65,7 @@ class Client:
 	def __init__(self):
 		self.clientState = ClientState()
 		self.host = "localhost"
-		self.server_port = 9998
+		self.serverPort = 9998
 		self.clientState.state = "disconnected"
 
 		self.run()
@@ -74,7 +74,7 @@ class Client:
 		self.host = ip
 		try:
 			self.connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-			self.connection.connect((self.host, self.server_port))
+			self.connection.connect((self.host, self.serverPort))
 			messageReceiver = MessageReceiver(self, self.connection)
 			messageReceiver.start()
 			self.clientState.state = "loggedOut"
@@ -127,6 +127,7 @@ class Client:
 				self.connectToServer(cmdArgs[1])
 			else:
 				print("\rInvalid input. Valid commands: connect <ip>")
+
 	def disconnect(self):
 		self.connection.close()
 
